@@ -1,4 +1,9 @@
-import { PipeTransform, Injectable, ArgumentMetadata } from '@nestjs/common';
+import {
+  PipeTransform,
+  Injectable,
+  ArgumentMetadata,
+  BadRequestException,
+} from '@nestjs/common';
 import { FileTypeValidator } from './file-type.validator';
 import { FileSizeValidator } from './file-size.validator';
 
@@ -10,7 +15,7 @@ export class FileSizeValidationPipe implements PipeTransform {
   ) {}
   transform(value: any, metadata: ArgumentMetadata) {
     const file = value;
-
+    if (!file) throw new BadRequestException('Required field File is missing!');
     const maxFileSize = +process.env.MAX_FILE_SUPPORT_IN_MB * 1024 * 1024; // 10 MB
     const allowedFileTypes = [process.env.SUPPORTED_MIME_TYPES];
     console.log(file, maxFileSize, allowedFileTypes);

@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BcryptService } from './zoho.service';
+import { BcryptService } from './tag.service';
 
 describe('BcryptService', () => {
   let service: BcryptService;

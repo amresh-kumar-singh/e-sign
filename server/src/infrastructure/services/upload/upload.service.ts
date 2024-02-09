@@ -1,5 +1,9 @@
 import { HttpService } from '@nestjs/axios';
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { response } from 'express';
 import { map } from 'rxjs';
 import { AxiosService } from '../axios/axiosinstance.service';
@@ -51,28 +55,49 @@ const templates = {
 export class UploadService {
   constructor(private readonly axiosService: AxiosService) {}
   async uploadFile(file: Express.Multer.File) {
-    console.log(file, typeof file);
     const data = fs.readFileSync(file.path);
-    // console.log(data);
-    // return;
+    // Hard coding all these data
+    const templates = {
+      template_name: file.originalname,
+      expiration_days: 1,
+      is_sequential: true,
+      reminder_period: 8,
+      email_reminders: false,
+      actions: [],
+    };
+
     const axiosInstance = this.axiosService.getAxiosInstance();
     const formData = new FormData();
-    const blob = new Blob([data], { type: file.mimetype });
-    console.log(blob);
+
     formData.append('file', data, {
       filename: file.originalname,
       contentType: file.mimetype,
     });
     formData.append('data', JSON.stringify({ templates }));
-    // return;
-    // Api call
+
     try {
       const response = await axiosInstance.post('templates', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      return response.data;
+      const data = response.data;
+      const template_id = data.templates?.template_id;
+      const template_name = data.templates?.template_name;
+      const document_id = data.templates?.document_fields?.[0]?.document_id;
+      if (!template_id || !document_id)
+        throw new InternalServerErrorException(
+          'Internal Server Error occurred',
+        );
+      // Saving response in JSON file using template id as file name
+      const structureData = { upload: response.data };
+      fs.writeFileSync(
+        `${template_id}.json`,
+        JSON.stringify(structureData, null, 2),
+      );
+
+      // Sending only important data to client
+      return { template_id, document_id, template_name };
     } catch (error) {
       console.log(error, 'upload file service');
     }

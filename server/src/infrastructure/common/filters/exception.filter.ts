@@ -15,14 +15,14 @@ export class DeleteFileOnErrorFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
     const status = exception.getStatus();
     console.log('res', request.file);
-    // if (request.file) {
-    fs.unlink(request.file.path, (err) => {
-      if (err) {
-        console.error(err);
-        return err;
-      }
-    });
-    // }
+    if (request.file) {
+      fs.unlink(request.file.path, (err) => {
+        if (err) {
+          console.error(err);
+          return err;
+        }
+      });
+    }
     response.status(status).json(exception.getResponse());
   }
 }

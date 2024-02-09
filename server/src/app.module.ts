@@ -1,8 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { ControllersModule } from './infrastructure/controllers/controllers.module';
 import { HttpModule } from '@nestjs/axios';
-import { EsignService } from './infrastructure/services/esign/esign.service';
-import { EsignModule } from './infrastructure/services/esign/esign.module';
+import { AddEsignTagModule } from './infrastructure/services/add-tag/tag.module';
 
 @Global()
 @Module({
@@ -12,7 +11,7 @@ import { EsignModule } from './infrastructure/services/esign/esign.module';
       timeout: 5000,
       maxRedirects: 5,
     }),
-    EsignModule,
+    AddEsignTagModule,
   ],
   // controllers: [ControllersModule],
   // providers: [AppService],
