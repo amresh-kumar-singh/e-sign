@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState } from "react";
 const APPCONTEXT = createContext(null);
 const AppProvider = ({ children }) => {
   const [selectedFile, setSelectedFile] = useState(null);
-  const [templateId, setTemplateId] = useState("57265000000037501");
+  const [templateId, setTemplateId] = useState(null);
   const [isTagUpdated, setIsTagUpdated] = useState(false);
   console.log("context", selectedFile, templateId);
   return (
