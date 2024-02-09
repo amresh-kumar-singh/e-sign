@@ -3,44 +3,28 @@ import {
   Body,
   Controller,
   Get,
+  HttpStatus,
+  Inject,
   Post,
   Put,
   Query,
-  RawBodyRequest,
-  Req,
+  Res,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UsecasesProxyModule } from 'src/infrastructure/usecases-proxy/usecases-proxy.module';
 import { UseCaseProxy } from 'src/infrastructure/usecases-proxy/usecases-proxy';
 import { UploadUseCases } from 'src/usecases/file/upload.usecases';
-import { NextFunction, Request, Response } from 'express';
-// import { FileValidationMiddleware } from 'src/infrastructure/middleware/file.middleware';
+import { Request, Response } from 'express';
 import * as multer from 'multer';
-// import { FileValidationMiddleware } from 'src/infrastructure/middleware/file.middleware';
 import { FileSizeValidationPipe } from 'src/infrastructure/common/validators/file-pipe-validators';
-// import { EsignModule } from 'src/infrastructure/services/add-tag/tag.module';
-// import { EsignService } from 'src/infrastructure/services/add-tag/tag.service';
-import { AxiosService } from 'src/infrastructure/services/axios/axiosinstance.service';
-import { AxiosInstance } from 'axios';
-import { UploadService } from 'src/infrastructure/services/upload/upload.service';
-import { AddEsignTagService } from 'src/infrastructure/services/add-tag/tag.service';
-import { EsignService } from 'src/infrastructure/services/sign/sign.service';
+import * as fs from 'fs';
+import { AddEsignTagUseCases } from 'src/usecases/file/tag.usecases';
+import { AddEsignTag } from 'src/domain/upload/upload.interface';
+import { SignDocumentUseCases } from 'src/usecases/file/sign.usecases';
 
-interface DocumentInfo {
-  template_id: string;
-  document_id: string;
-  template_name: string;
-  role1: RoleInfo;
-  role2: RoleInfo;
-  role3: RoleInfo;
-}
-
-interface RoleInfo {
-  name: string;
-  email: string;
-}
 const storage = multer.diskStorage({
   destination: './uploads',
   filename: (
@@ -52,21 +36,16 @@ const storage = multer.diskStorage({
     callback(null, file.originalname);
   },
 });
-interface ESignTagData {
-  tagId: string;
-  tagName: string;
-  // other fields...
-}
+
 @Controller('file')
 export class FileController {
   constructor(
-    // @Inject(UsecasesProxyModule.UPLOAD_FILE_USECASES_PROXY)
-    // private readonly fileUploadUsecasesProxy: UseCaseProxy<UploadUseCases>,
-    // private readonly get: EsignService,
-    private readonly axiosService: AxiosService,
-    private readonly uploadService: UploadService,
-    private readonly addEsignTagService: AddEsignTagService,
-    private readonly esignService: EsignService,
+    @Inject(UsecasesProxyModule.UPLOAD_FILE_USECASES_PROXY)
+    private readonly uploadFileUsecasesProxy: UseCaseProxy<UploadUseCases>,
+    @Inject(UsecasesProxyModule.ADD_TAG_USECASES_PROXY)
+    private readonly addEsignTagUsecasesProxy: UseCaseProxy<AddEsignTagUseCases>,
+    @Inject(UsecasesProxyModule.ESIGN_USECASES_PROXY)
+    private readonly eSignUsecasesProxy: UseCaseProxy<SignDocumentUseCases>,
   ) {}
 
   // Upload File and create zoho sign template
@@ -76,21 +55,48 @@ export class FileController {
     @UploadedFile(FileSizeValidationPipe)
     file: Express.Multer.File,
   ) {
-    return await this.uploadService.uploadFile(file);
+    const data = await this.uploadFileUsecasesProxy.getInstance().upload(file);
+    return data;
   }
 
   @Get()
-  async viewFile() {}
+  async viewFile(
+    @Query('template_id') template_id: string,
+    @Res() res: Response,
+  ) {
+    if (!fs.existsSync(`${template_id}.json`))
+      throw new BadRequestException(
+        `No file found with template id: ${template_id}`,
+      );
+    const file = fs.readFileSync(`${template_id}.json`, 'utf-8');
+    const fileObjData = JSON.parse(file);
+    // Saved template name as file name during upload
+    const fileName = fileObjData.upload.templates.template_name;
+    const filePath = 'uploads/' + fileName;
+    const stats = fs.statSync(filePath);
+
+    res.setHeader('Content-Length', stats.size);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+
+    const stream = fs.createReadStream(filePath);
+    stream.pipe(res);
+
+    return res.status(HttpStatus.OK);
+  }
 
   @Put()
-  async addEsignTag(@Body() data: DocumentInfo) {
-    console.log(data);
-    let res = await this.addEsignTagService.addSignTag(data);
+  async addEsignTag(@Body() data: AddEsignTag) {
+    const res = await this.addEsignTagUsecasesProxy
+      .getInstance()
+      .addEsignTag(data);
     return res;
   }
 
   @Post('sign')
   async eSign(@Query('template_id') template_id: string) {
-    return await this.esignService.sign(template_id);
+    return await this.eSignUsecasesProxy
+      .getInstance()
+      .signDocument(template_id);
   }
 }

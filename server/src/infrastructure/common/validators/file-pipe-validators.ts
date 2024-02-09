@@ -18,9 +18,8 @@ export class FileSizeValidationPipe implements PipeTransform {
     if (!file) throw new BadRequestException('Required field File is missing!');
     const maxFileSize = +process.env.MAX_FILE_SUPPORT_IN_MB * 1024 * 1024; // 10 MB
     const allowedFileTypes = [process.env.SUPPORTED_MIME_TYPES];
-    console.log(file, maxFileSize, allowedFileTypes);
-    //Validate file size
 
+    //Validate file size
     this.fileSizeValidator.validate(file.size, maxFileSize);
 
     //Validate file type

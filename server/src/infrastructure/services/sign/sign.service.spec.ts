@@ -1,24 +1,49 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { BcryptService } from './sign.service';
+import { BadRequestException } from '@nestjs/common';
+import { EsignService } from './sign.service';
+import { AxiosService } from '../axios/axiosinstance.service';
+import * as fs from 'fs';
 
-describe('BcryptService', () => {
-  let service: BcryptService;
+const mockAxiosService = {
+  getAxiosInstance: jest.fn(() => ({
+    post: jest.fn().mockResolvedValue({
+      data: { templates: { request_status: 'pending' } },
+    }),
+  })),
+};
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [BcryptService],
-    }).compile();
+jest.mock('../axios/axiosinstance.service', () => ({
+  AxiosService: jest.fn(() => mockAxiosService),
+}));
 
-    service = module.get<BcryptService>(BcryptService);
+jest.mock('fs', () => ({
+  existsSync: jest.fn().mockReturnValue(true),
+  readFileSync: jest
+    .fn()
+    .mockReturnValue(JSON.stringify({ tag: { templates: { actions: [] } } })),
+  writeFileSync: jest.fn(),
+}));
+
+describe('EsignService', () => {
+  let service: EsignService;
+
+  beforeEach(() => {
+    service = new EsignService(mockAxiosService as any);
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
-  it('should hash a password correctly', async () => {
-    const passwordHashed = await service.hash('password');
+  describe('sign', () => {
+    it('should throw BadRequestException if template_id is missing', async () => {
+      await expect(service.sign('')).rejects.toThrow(BadRequestException);
+    });
 
-    expect(await service.compare('password', passwordHashed)).toBe(true);
+    it('should throw BadRequestException if template file does not exist', async () => {
+      jest.spyOn(require('fs'), 'existsSync').mockReturnValueOnce(false);
+      await expect(service.sign('57265000000033993')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
   });
 });

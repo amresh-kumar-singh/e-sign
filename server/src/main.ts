@@ -8,7 +8,11 @@ dotenv.config({ path: './env/local.env' });
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalFilters(new DeleteFileOnErrorFilter());
-
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    //  credentials: true,
+  });
   await app.listen(3000);
 }
 bootstrap();

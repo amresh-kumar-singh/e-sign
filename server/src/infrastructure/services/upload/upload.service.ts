@@ -55,6 +55,7 @@ const templates = {
 export class UploadService {
   constructor(private readonly axiosService: AxiosService) {}
   async uploadFile(file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('Required field file is missing');
     const data = fs.readFileSync(file.path);
     // Hard coding all these data
     const templates = {
@@ -99,7 +100,7 @@ export class UploadService {
       // Sending only important data to client
       return { template_id, document_id, template_name };
     } catch (error) {
-      console.log(error, 'upload file service');
+      console.log(error, 'Error while uploading file!');
     }
   }
 }

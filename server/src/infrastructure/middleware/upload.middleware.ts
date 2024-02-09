@@ -19,17 +19,15 @@ const upload = multer({ storage: storage }).single('files');
 @Injectable()
 export class MulterSingleMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
-    console.log(req);
     upload(req, res, function (err) {
       console.log(err);
       if (err instanceof multer.MulterError) {
-        // A Multer error occurred when uploading
+        // If multer error
         return res.status(400).send({ message: 'Multer error', error: err });
       } else if (err) {
-        // An unknown error occurred when uploading
+        // other error
         return res.status(500).send({ message: 'Unknown error', error: err });
       }
-      // Everything went fine, proceed to the next middleware
       next();
     });
   }

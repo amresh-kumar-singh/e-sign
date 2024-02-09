@@ -99,11 +99,13 @@ export class EsignService {
       );
       const request_status = response.data?.requests?.request_status;
       if (request_status) {
-        return `Request for the document signature is ${request_status}`;
+        return {
+          message: `Request for the document signature is ${request_status}`,
+        };
       } else {
       }
     } catch (error) {
-      console.log(error, 'upload file service');
+      console.log(error, 'Error while signign file!');
       throw error.message;
     }
   }

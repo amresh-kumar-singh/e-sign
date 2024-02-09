@@ -8,8 +8,6 @@ import { FileController } from './file/file.controller';
 import { UsecasesProxyModule } from '../usecases-proxy/usecases-proxy.module';
 // import { FileValidationMiddleware } from '../middleware/file.middleware';
 import { FileValidatorsModule } from '../common/validators/file-validators.module';
-import { MulterMiddleware } from '../middleware/multer.middleware';
-import { MulterSingleMiddleware } from '../middleware/upload.middleware';
 import { AddEsignTagModule } from '../services/add-tag/tag.module';
 import { AxiosModule } from '../services/axios/axios.module';
 import { UploadModule } from '../services/upload/upload.module';
